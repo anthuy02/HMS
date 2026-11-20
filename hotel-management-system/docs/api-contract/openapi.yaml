@@ -1,0 +1,169 @@
+openapi: 3.0.3
+info:
+  title: Hotel Management System (HMS) API
+  description: Hợp đồng REST API chuẩn cho 7 modules (F01 -> F07)
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080/api
+    description: Mock or Real Backend Server
+
+paths:
+  /auth/login:
+    post:
+      summary: Đăng nhập hệ thống [F01]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  example: admin@hotel.com
+                password:
+                  type: string
+                  example: admin123
+      responses:
+        '200':
+          description: Đăng nhập thành công, trả về JWT Token và User Info
+        '401':
+          description: Thông tin đăng nhập không hợp lệ
+
+  /auth/users:
+    get:
+      summary: Lấy danh sách tài khoản [F01 - AUTH_01]
+      responses:
+        '200':
+          description: Danh sách tài khoản người dùng
+        '403':
+          description: Không đủ quyền truy cập (Chỉ dành cho ADMIN)
+    post:
+      summary: Tạo mới tài khoản [F01 - AUTH_01]
+      responses:
+        '201':
+          description: Tạo tài khoản thành công
+
+  /rooms:
+    get:
+      summary: Lấy danh sách phòng và sơ đồ trạng thái [F02]
+      responses:
+        '200':
+          description: Danh sách phòng hiện có
+    post:
+      summary: Thêm phòng mới [F02 - ROOM_01]
+      responses:
+        '201':
+          description: Thêm phòng thành công
+
+  /rooms/{id}:
+    put:
+      summary: Cập nhật thông tin và đơn giá phòng [F02 - ROOM_01]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Cập nhật phòng thành công
+
+  /reservations:
+    get:
+      summary: Danh sách đơn đặt phòng [F03]
+      responses:
+        '200':
+          description: Danh sách các đơn đặt phòng
+    post:
+      summary: Đặt phòng mới [F03 - BR01, BR02]
+      responses:
+        '201':
+          description: Tạo đơn đặt phòng thành công
+        '409':
+          description: Trùng lặp lịch đặt phòng (BR02)
+
+  /stays/check-in:
+    post:
+      summary: Xác nhận nhận phòng [F04 - BR03]
+      responses:
+        '200':
+          description: Check-in thành công, phòng đổi sang OCCUPIED
+
+  /stays/check-out:
+    post:
+      summary: Xác nhận trả phòng [F04 - BR04]
+      responses:
+        '200':
+          description: Check-out thành công, tính phụ thu và đổi phòng sang DIRTY
+
+  /billing/invoices/{id}:
+    get:
+      summary: Lấy thông tin chi tiết hóa đơn [F05 - BR05]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Thông tin hóa đơn chi tiết
+
+  /billing/invoices/{id}/pay:
+    post:
+      summary: Thanh toán hóa đơn [F05 - BR06]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Khóa chống lặp giao dịch thanh toán (BR06)
+      responses:
+        '200':
+          description: Thanh toán thành công
+        '400':
+          description: Số tiền thanh toán vượt quá số dư còn lại (BR06)
+
+  /housekeeping/dirty-rooms:
+    get:
+      summary: Lấy danh sách các phòng đang bẩn [F06 - TC_HK_01]
+      responses:
+        '200':
+          description: Danh sách phòng trạng thái DIRTY
+
+  /housekeeping/clean/{roomId}:
+    post:
+      summary: Xác nhận đã hoàn tất dọn phòng [F06 - BR07, TC_HK_02]
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Chuyển trạng thái phòng DIRTY -> AVAILABLE
+
+  /services/orders:
+    post:
+      summary: Đặt dịch vụ Minibar/Giặt ủi gắn vào phòng [F06 - TC_SVC_01]
+      responses:
+        '201':
+          description: Thêm chi phí dịch vụ vào hóa đơn thành công
+
+  /reports/revenue:
+    get:
+      summary: Báo cáo doanh thu kỳ T [F07 - REP_01]
+      responses:
+        '200':
+          description: Dữ liệu doanh thu & tỷ lệ lấp đầy phòng
