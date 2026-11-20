@@ -9,7 +9,7 @@ Dự án được thiết kế chuẩn mực theo mô hình tách biệt Front-E
 ## 🏛 Cấu trúc Thư mục Tổng thể
 
 ```text
-hotel-management-system/
+HMS/
 ├── .github/
 │   └── workflows/
 │       └── frontend-ci.yml                  # Kiểm tra TypeScript, ESLint và build thử Vite
