@@ -53,7 +53,7 @@ export const HousekeepingBoardPage: React.FC = () => {
             letterSpacing: '-0.3px',
           }}
         >
-          Nhiệm vụ buồng phòng
+          Bảng Điều phối Nhiệm vụ Buồng phòng
         </h1>
         <p
           style={{

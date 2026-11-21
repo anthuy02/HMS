@@ -1,21 +1,37 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { billingService } from '../../../api/services/billing.service';
 import { StatusBadge } from '../../../components/common/StatusBadge';
 import { CurrencyDisplay } from '../../../components/common/CurrencyDisplay';
 import { formatDateVN } from '../../../utils/formatters';
 import { InvoicePrintView } from '../components/InvoicePrintView';
+import { PaymentModal } from '../components/PaymentModal';
 
 export const InvoiceDetailPage: React.FC = () => {
   const { invoiceId = 'inv-103' } = useParams<{ invoiceId: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [isPrintView, setIsPrintView] = useState(false);
+  const [discountPercent, setDiscountPercent] = useState<number>(10);
+  const [isPayModalOpen, setIsPayModalOpen] = useState(false);
 
   const { data: invoice, isLoading } = useQuery({
     queryKey: ['invoice', invoiceId],
     queryFn: () => billingService.getInvoiceById(invoiceId),
   });
+
+  const handleApplyDiscount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!invoice) return;
+    try {
+      await billingService.applyDiscount(invoice.id, discountPercent);
+      queryClient.invalidateQueries({ queryKey: ['invoice', invoiceId] });
+      alert(`Đã áp dụng chiết khấu ${discountPercent}% thành công!`);
+    } catch (err: any) {
+      alert(err.message || 'Lỗi khi áp dụng chiết khấu');
+    }
+  };
 
   if (isLoading) return <div style={{ padding: '32px', color: '#6d5b52' }}>Đang tải thông tin hóa đơn...</div>;
   if (!invoice) {
@@ -65,7 +81,7 @@ export const InvoiceDetailPage: React.FC = () => {
               letterSpacing: '-0.3px',
             }}
           >
-            Hóa đơn thanh toán {invoice.invoiceNumber}
+            Bảng Kê Chi Tiết Hóa Đơn: {invoice.invoiceNumber}
           </h1>
           <p
             style={{
@@ -78,7 +94,22 @@ export const InvoiceDetailPage: React.FC = () => {
             Phòng {invoice.roomNumber} - Khách hàng: <b>{invoice.guestName}</b> [{invoice.bookingType}]
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => setIsPayModalOpen(true)}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#16a34a',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            Thu tiền / Thanh toán (BR06)
+          </button>
           <button
             onClick={() => setIsPrintView(true)}
             style={{ padding: '8px 16px', backgroundColor: '#475569', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 600 }}
@@ -94,6 +125,49 @@ export const InvoiceDetailPage: React.FC = () => {
           <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '14px', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
             Bảng kê chi tiết các khoản phí [BR-50]
           </h3>
+
+          {/* Form nhập chiết khấu (BR-50 step 6, BVA 1) */}
+          <form
+            onSubmit={handleApplyDiscount}
+            style={{
+              display: 'flex',
+              gap: '10px',
+              alignItems: 'center',
+              padding: '12px 16px',
+              backgroundColor: '#f8fafc',
+              borderRadius: '8px',
+              border: '1px solid #e2e8f0',
+              marginBottom: '16px',
+            }}
+          >
+            <label style={{ fontSize: '13px', fontWeight: 600, color: '#334155' }}>
+              Chiết khấu voucher / giảm giá (%):
+            </label>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              value={discountPercent}
+              onChange={(e) => setDiscountPercent(Number(e.target.value))}
+              style={{ width: '80px', padding: '6px 10px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '13px' }}
+            />
+            <button
+              type="submit"
+              style={{
+                padding: '6px 16px',
+                backgroundColor: '#482e24',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Áp dụng
+            </button>
+          </form>
+
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
               <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', textAlign: 'left' }}>
@@ -164,7 +238,7 @@ export const InvoiceDetailPage: React.FC = () => {
               <CurrencyDisplay amount={invoice.lateCheckOutSurcharge} isBold={false} fontSize="12px" />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#16a34a' }}>
-              <span>4. Giảm giá (discount):</span>
+              <span>4. Giảm giá chiết khấu:</span>
               <span>- <CurrencyDisplay amount={invoice.discount} color="#16a34a" fontSize="12px" /></span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, borderTop: '1px dashed #e2e8f0', paddingTop: '4px' }}>
@@ -202,6 +276,18 @@ export const InvoiceDetailPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {isPayModalOpen && (
+        <PaymentModal
+          isOpen={isPayModalOpen}
+          invoice={invoice}
+          onClose={() => setIsPayModalOpen(false)}
+          onSuccess={() => {
+            setIsPayModalOpen(false);
+            queryClient.invalidateQueries({ queryKey: ['invoice', invoiceId] });
+          }}
+        />
+      )}
     </div>
   );
 };

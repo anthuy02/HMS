@@ -123,6 +123,7 @@ export const LoginPage: React.FC = () => {
             </label>
             <input
               type="text"
+              placeholder="Nhập tên đăng nhập (ví dụ: admin01)"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
@@ -146,6 +147,7 @@ export const LoginPage: React.FC = () => {
             </label>
             <input
               type="password"
+              placeholder="Nhập mật khẩu (Hotel@2026)"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required

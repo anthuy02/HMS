@@ -77,7 +77,7 @@ export const RoomServiceOrderPage: React.FC = () => {
             letterSpacing: '-0.3px',
           }}
         >
-          Dịch vụ phòng &amp; Bồi thường
+          Gọi Dịch vụ Phòng &amp; Báo hỏng Hư hại
         </h1>
         <p
           style={{
@@ -125,7 +125,7 @@ export const RoomServiceOrderPage: React.FC = () => {
             fontSize: '13px',
           }}
         >
-          Bồi thường Hư hao tài sản (BR-36)
+          Bồi thường Hư hao (BR-36)
         </button>
       </div>
 

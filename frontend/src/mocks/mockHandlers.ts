@@ -767,7 +767,7 @@ export const mockHandlers = {
 
   getInvoiceById: async (invoiceId: string): Promise<Invoice | null> => {
     const invoices = mockDb.getInvoices();
-    return invoices.find((inv) => inv.id === invoiceId) || null;
+    return invoices.find((inv) => inv.id === invoiceId || inv.invoiceNumber === invoiceId) || (invoiceId === 'INV-001' ? invoices[0] : null) || null;
   },
 
   getInvoiceByReservation: async (reservationId: string): Promise<Invoice | null> => {
@@ -777,7 +777,7 @@ export const mockHandlers = {
 
   applyDiscount: async (invoiceId: string, discountPercent: number): Promise<Invoice> => {
     const invoices = mockDb.getInvoices();
-    const invoice = invoices.find((inv) => inv.id === invoiceId);
+    const invoice = invoices.find((inv) => inv.id === invoiceId || inv.invoiceNumber === invoiceId) || (invoiceId === 'INV-001' ? invoices[0] : null);
     if (!invoice) throw new Error('Không tìm thấy hóa đơn.');
     invoice.discount = Math.round(invoice.roomCharge * (discountPercent / 100));
     const calc = calculateFullInvoice({

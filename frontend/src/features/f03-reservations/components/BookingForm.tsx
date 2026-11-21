@@ -107,7 +107,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ isOpen, onClose, onSuc
                   checked={bookingType === 'NIGHTLY'}
                   onChange={() => setBookingType('NIGHTLY')}
                 />
-                <b>Theo đêm (NIGHTLY)</b> - 1 đến 30 đêm
+                <b>Theo đêm (Nightly)</b> - 1 đến 30 đêm
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer' }}>
                 <input
@@ -117,7 +117,7 @@ export const BookingForm: React.FC<BookingFormProps> = ({ isOpen, onClose, onSuc
                   checked={bookingType === 'HOURLY'}
                   onChange={() => setBookingType('HOURLY')}
                 />
-                <b>Theo giờ (HOURLY)</b> - 06:00 đến 22:00, tối đa 2 khách
+                <b>Theo giờ (Hourly - BR-04)</b> - 06:00 đến 22:00, tối đa 2 khách
               </label>
             </div>
           </div>
