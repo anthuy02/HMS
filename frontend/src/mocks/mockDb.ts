@@ -1,17 +1,30 @@
-import { SEED_USERS, SEED_ROOMS, SEED_SERVICES, SEED_RESERVATIONS, SEED_INVOICES } from './seedData';
+import {
+  SEED_USERS,
+  SEED_ROOMS,
+  SEED_CATALOG_ITEMS,
+  SEED_VOUCHERS,
+  SEED_CONFIG,
+  SEED_HOLIDAYS,
+  SEED_RESERVATIONS,
+  SEED_CLEANING_TASKS,
+  SEED_INVOICES,
+} from './seedData';
 import { User } from '../types/rbac.types';
-import { Room } from '../types/room.types';
+import { Room, CleaningTask } from '../types/room.types';
 import { Reservation } from '../types/reservation.types';
 import { Invoice } from '../types/billing.types';
+import { SystemConfig, Holiday, ServiceCatalogItem, Voucher } from '../types/systemConfig.types';
 
 const STORAGE_KEYS = {
-  USERS: 'hms_mock_users',
-  ROOMS: 'hms_mock_rooms',
-  SERVICES: 'hms_mock_services',
-  RESERVATIONS: 'hms_mock_reservations',
-  INVOICES: 'hms_mock_invoices',
-  CURRENT_USER: 'hms_mock_current_user',
-  TOKEN: 'token',
+  USERS: 'hms_mock_v12_users',
+  ROOMS: 'hms_mock_v12_rooms',
+  CATALOG: 'hms_mock_v12_catalog',
+  VOUCHERS: 'hms_mock_v12_vouchers',
+  CONFIG: 'hms_mock_v12_config',
+  HOLIDAYS: 'hms_mock_v12_holidays',
+  RESERVATIONS: 'hms_mock_v12_reservations',
+  CLEANING_TASKS: 'hms_mock_v12_cleaning_tasks',
+  INVOICES: 'hms_mock_v12_invoices',
 };
 
 class MockDatabase {
@@ -20,24 +33,12 @@ class MockDatabase {
   }
 
   init() {
+    // If not exists or legacy, seed initial data
     if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
-      localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(SEED_USERS));
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.ROOMS)) {
-      localStorage.setItem(STORAGE_KEYS.ROOMS, JSON.stringify(SEED_ROOMS));
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.SERVICES)) {
-      localStorage.setItem(STORAGE_KEYS.SERVICES, JSON.stringify(SEED_SERVICES));
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.RESERVATIONS)) {
-      localStorage.setItem(STORAGE_KEYS.RESERVATIONS, JSON.stringify(SEED_RESERVATIONS));
-    }
-    if (!localStorage.getItem(STORAGE_KEYS.INVOICES)) {
-      localStorage.setItem(STORAGE_KEYS.INVOICES, JSON.stringify(SEED_INVOICES));
+      this.reset();
     }
   }
 
-  // Users
   getUsers(): (User & { password?: string })[] {
     return JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
   }
@@ -45,7 +46,6 @@ class MockDatabase {
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
   }
 
-  // Rooms
   getRooms(): Room[] {
     return JSON.parse(localStorage.getItem(STORAGE_KEYS.ROOMS) || '[]');
   }
@@ -53,20 +53,54 @@ class MockDatabase {
     localStorage.setItem(STORAGE_KEYS.ROOMS, JSON.stringify(rooms));
   }
 
-  // Services
-  getServices(): any[] {
-    return JSON.parse(localStorage.getItem(STORAGE_KEYS.SERVICES) || '[]');
+  getCatalog(): ServiceCatalogItem[] {
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.CATALOG) || '[]');
+  }
+  saveCatalog(items: ServiceCatalogItem[]) {
+    localStorage.setItem(STORAGE_KEYS.CATALOG, JSON.stringify(items));
   }
 
-  // Reservations
+  getVouchers(): Voucher[] {
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.VOUCHERS) || '[]');
+  }
+  saveVouchers(vouchers: Voucher[]) {
+    localStorage.setItem(STORAGE_KEYS.VOUCHERS, JSON.stringify(vouchers));
+  }
+
+  getConfig(): SystemConfig {
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.CONFIG) || JSON.stringify(SEED_CONFIG));
+  }
+  saveConfig(config: SystemConfig) {
+    localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(config));
+  }
+
+  getHolidays(): Holiday[] {
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.HOLIDAYS) || '[]');
+  }
+  saveHolidays(holidays: Holiday[]) {
+    localStorage.setItem(STORAGE_KEYS.HOLIDAYS, JSON.stringify(holidays));
+  }
+
   getReservations(): Reservation[] {
-    return JSON.parse(localStorage.getItem(STORAGE_KEYS.RESERVATIONS) || '[]');
+    const raw = localStorage.getItem(STORAGE_KEYS.RESERVATIONS);
+    const data: Reservation[] = raw ? JSON.parse(raw) : [];
+    if (!data || data.length < 5) {
+      this.saveReservations(SEED_RESERVATIONS);
+      return SEED_RESERVATIONS;
+    }
+    return data;
   }
   saveReservations(reservations: Reservation[]) {
     localStorage.setItem(STORAGE_KEYS.RESERVATIONS, JSON.stringify(reservations));
   }
 
-  // Invoices
+  getCleaningTasks(): CleaningTask[] {
+    return JSON.parse(localStorage.getItem(STORAGE_KEYS.CLEANING_TASKS) || '[]');
+  }
+  saveCleaningTasks(tasks: CleaningTask[]) {
+    localStorage.setItem(STORAGE_KEYS.CLEANING_TASKS, JSON.stringify(tasks));
+  }
+
   getInvoices(): Invoice[] {
     return JSON.parse(localStorage.getItem(STORAGE_KEYS.INVOICES) || '[]');
   }
@@ -74,12 +108,15 @@ class MockDatabase {
     localStorage.setItem(STORAGE_KEYS.INVOICES, JSON.stringify(invoices));
   }
 
-  // Reset to initial state
   reset() {
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(SEED_USERS));
     localStorage.setItem(STORAGE_KEYS.ROOMS, JSON.stringify(SEED_ROOMS));
-    localStorage.setItem(STORAGE_KEYS.SERVICES, JSON.stringify(SEED_SERVICES));
+    localStorage.setItem(STORAGE_KEYS.CATALOG, JSON.stringify(SEED_CATALOG_ITEMS));
+    localStorage.setItem(STORAGE_KEYS.VOUCHERS, JSON.stringify(SEED_VOUCHERS));
+    localStorage.setItem(STORAGE_KEYS.CONFIG, JSON.stringify(SEED_CONFIG));
+    localStorage.setItem(STORAGE_KEYS.HOLIDAYS, JSON.stringify(SEED_HOLIDAYS));
     localStorage.setItem(STORAGE_KEYS.RESERVATIONS, JSON.stringify(SEED_RESERVATIONS));
+    localStorage.setItem(STORAGE_KEYS.CLEANING_TASKS, JSON.stringify(SEED_CLEANING_TASKS));
     localStorage.setItem(STORAGE_KEYS.INVOICES, JSON.stringify(SEED_INVOICES));
   }
 }

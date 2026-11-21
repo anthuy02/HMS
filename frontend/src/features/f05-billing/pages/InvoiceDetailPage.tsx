@@ -1,20 +1,15 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { billingService } from '../../../api/services/billing.service';
 import { StatusBadge } from '../../../components/common/StatusBadge';
 import { CurrencyDisplay } from '../../../components/common/CurrencyDisplay';
-import { formatDateVN, formatDateTimeVN } from '../../../utils/formatters';
-import { PaymentModal } from '../components/PaymentModal';
+import { formatDateVN } from '../../../utils/formatters';
 import { InvoicePrintView } from '../components/InvoicePrintView';
 
 export const InvoiceDetailPage: React.FC = () => {
   const { invoiceId = 'inv-103' } = useParams<{ invoiceId: string }>();
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
-
-  const [discountInput, setDiscountInput] = useState(0);
-  const [isPayModalOpen, setIsPayModalOpen] = useState(false);
   const [isPrintView, setIsPrintView] = useState(false);
 
   const { data: invoice, isLoading } = useQuery({
@@ -22,22 +17,31 @@ export const InvoiceDetailPage: React.FC = () => {
     queryFn: () => billingService.getInvoiceById(invoiceId),
   });
 
-  const handleApplyDiscount = async () => {
-    if (!invoice) return;
-    try {
-      await billingService.applyDiscount(invoice.id, discountInput);
-      queryClient.invalidateQueries({ queryKey: ['invoice', invoiceId] });
-    } catch (err: any) {
-      alert(err.message || 'Lỗi áp dụng giảm giá');
-    }
-  };
-
-  if (isLoading) return <div>Đang tải thông tin hóa đơn...</div>;
+  if (isLoading) return <div style={{ padding: '32px', color: '#6d5b52' }}>Đang tải thông tin hóa đơn...</div>;
   if (!invoice) {
     return (
-      <div>
-        <h2>Không tìm thấy hóa đơn mã: {invoiceId}</h2>
-        <button onClick={() => navigate('/front-desk')}>Quay lại Bàn lễ tân</button>
+      <div style={{ padding: '32px', textAlign: 'center' }}>
+        <h2 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontSize: '22px', color: '#362118', marginBottom: '8px' }}>
+          Không tìm thấy hóa đơn mã: {invoiceId}
+        </h2>
+        <p style={{ fontSize: '13px', color: '#786c65', marginBottom: '20px' }}>
+          Hóa đơn này có thể chưa được tạo hoặc đã tất toán.
+        </p>
+        <button
+          onClick={() => navigate('/billing')}
+          style={{
+            padding: '10px 20px',
+            backgroundColor: '#482e24',
+            color: '#f8f5ec',
+            border: 'none',
+            borderRadius: '8px',
+            fontSize: '13.5px',
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          ← Quay lại Sổ cái Hóa đơn
+        </button>
       </div>
     );
   }
@@ -54,7 +58,7 @@ export const InvoiceDetailPage: React.FC = () => {
             [F05] Hóa đơn Thanh toán: {invoice.invoiceNumber}
           </h1>
           <p style={{ fontSize: '13px', color: '#64748b' }}>
-            Phòng {invoice.roomNumber} - Khách hàng: <b>{invoice.guestName}</b>
+            Phòng {invoice.roomNumber} - Khách hàng: <b>{invoice.guestName}</b> [{invoice.bookingType}]
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
@@ -64,22 +68,14 @@ export const InvoiceDetailPage: React.FC = () => {
           >
             In Hóa đơn (BILL_03)
           </button>
-          {invoice.remainingBalance > 0 && (
-            <button
-              onClick={() => setIsPayModalOpen(true)}
-              style={{ padding: '8px 16px', backgroundColor: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 600 }}
-            >
-              Thu tiền / Thanh toán (BR06)
-            </button>
-          )}
         </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
-        {/* Bảng kê chi tiết các mục (BR05) */}
+        {/* Bảng kê chi tiết các khoản (BR-50) */}
         <div style={{ backgroundColor: '#fff', borderRadius: '10px', padding: '20px', border: '1px solid #e2e8f0' }}>
           <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '14px', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
-            Bảng kê chi tiết các khoản (BILL_01)
+            Bảng kê chi tiết các khoản phí [BR-50]
           </h3>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
             <thead>
@@ -93,7 +89,10 @@ export const InvoiceDetailPage: React.FC = () => {
             <tbody>
               {invoice.items.map((it) => (
                 <tr key={it.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                  <td style={{ padding: '10px' }}>{it.description}</td>
+                  <td style={{ padding: '10px' }}>
+                    {it.description}
+                    {it.damageNote && <div style={{ fontSize: '11px', color: '#dc2626' }}>Ghi chú: {it.damageNote}</div>}
+                  </td>
                   <td style={{ padding: '10px' }}>{it.quantity}</td>
                   <td style={{ padding: '10px' }}><CurrencyDisplay amount={it.unitPrice} fontSize="13px" isBold={false} /></td>
                   <td style={{ padding: '10px', textAlign: 'right' }}><CurrencyDisplay amount={it.total} fontSize="13px" /></td>
@@ -102,110 +101,90 @@ export const InvoiceDetailPage: React.FC = () => {
             </tbody>
           </table>
 
-          {/* Lịch sử thanh toán */}
+          {/* Lịch sử giao dịch */}
           <h4 style={{ fontSize: '14px', fontWeight: 700, marginTop: '24px', marginBottom: '10px' }}>
-            Lịch sử giao dịch thanh toán:
+            Lịch sử giao dịch thanh toán / hoàn tiền qua Gateway:
           </h4>
           {invoice.payments.length === 0 ? (
-            <p style={{ fontSize: '13px', color: '#94a3b8' }}>Chưa có thanh toán nào được ghi nhận.</p>
+            <p style={{ fontSize: '13px', color: '#94a3b8' }}>Chưa có giao dịch thanh toán.</p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {invoice.payments.map((p) => (
                 <div key={p.id} style={{ padding: '8px 12px', backgroundColor: '#f8fafc', borderRadius: '6px', fontSize: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <b>{p.method}</b> - {formatDateTimeVN(p.transactionDate)}
-                    <div style={{ color: '#64748b' }}>Key: {p.idempotencyKey}</div>
+                    <b>{p.type}</b> ({p.method}) - {new Date(p.transactionDate).toLocaleString('vi-VN')}
+                    <div style={{ color: '#64748b' }}>Key: {p.idempotencyKey} | Ghi chú: {p.note}</div>
                   </div>
-                  <CurrencyDisplay amount={p.amount} color="#16a34a" />
+                  <CurrencyDisplay amount={p.amount} color={p.type.includes('REFUND') ? '#0284c7' : '#16a34a'} />
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* Tổng kết & Chiết khấu & Thuế */}
-        <div style={{ backgroundColor: '#fff', borderRadius: '10px', padding: '20px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        {/* Cột tổng hợp 11 bước (BR-50) */}
+        <div style={{ backgroundColor: '#fff', borderRadius: '10px', padding: '20px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '14px', fontWeight: 600 }}>Trạng thái:</span>
             <StatusBadge status={invoice.status} />
           </div>
 
-          <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px' }}>
+          <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Tiền phòng:</span>
-              <CurrencyDisplay amount={invoice.roomCharge} isBold={false} />
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Dịch vụ Minibar/Giặt ủi:</span>
-              <CurrencyDisplay amount={invoice.serviceCharge} isBold={false} />
+              <span>1. Tiền phòng (roomCharge):</span>
+              <CurrencyDisplay amount={invoice.roomCharge} isBold={false} fontSize="12px" />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Phụ thu trả muộn (BR04):</span>
-              <CurrencyDisplay amount={invoice.lateSurcharge} isBold={false} />
+              <span>2. Phụ thu ngày lễ (+20%):</span>
+              <CurrencyDisplay amount={invoice.holidaySurcharge} isBold={false} fontSize="12px" />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, borderTop: '1px dashed #e2e8f0', paddingTop: '6px' }}>
-              <span>Tạm tính (SubTotal):</span>
-              <CurrencyDisplay amount={invoice.subTotal} />
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>3. Phụ thu nhận sớm:</span>
+              <CurrencyDisplay amount={invoice.earlyCheckInSurcharge} isBold={false} fontSize="12px" />
             </div>
-          </div>
-
-          {/* Form chiết khấu BVA [0 - 100%] */}
-          <div style={{ backgroundColor: '#f8fafc', padding: '10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-            <label style={{ fontSize: '12px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
-              Chiết khấu (%) [BVA: 0 - 100%]:
-            </label>
-            <div style={{ display: 'flex', gap: '6px' }}>
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={discountInput}
-                onChange={(e) => setDiscountInput(Number(e.target.value))}
-                style={{ width: '80px', padding: '4px 8px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
-              />
-              <button
-                onClick={handleApplyDiscount}
-                style={{ padding: '4px 10px', fontSize: '12px', backgroundColor: '#0284c7', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 600 }}
-              >
-                Áp dụng
-              </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>3. Phụ thu trả muộn:</span>
+              <CurrencyDisplay amount={invoice.lateCheckOutSurcharge} isBold={false} fontSize="12px" />
             </div>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#16a34a' }}>
-              <span>Giảm giá ({invoice.discountPercent}%):</span>
-              <span>- <CurrencyDisplay amount={invoice.discountAmount} color="#16a34a" /></span>
+              <span>4. Giảm giá (discount):</span>
+              <span>- <CurrencyDisplay amount={invoice.discount} color="#16a34a" fontSize="12px" /></span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, borderTop: '1px dashed #e2e8f0', paddingTop: '4px' }}>
+              <span>5. Base tính phí DV (serviceFeeBase):</span>
+              <CurrencyDisplay amount={invoice.serviceFeeBase} fontSize="12px" />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span>Thuế VAT (10%):</span>
-              <CurrencyDisplay amount={invoice.vatAmount} isBold={false} />
+              <span>6. Phí dịch vụ (5%):</span>
+              <CurrencyDisplay amount={invoice.serviceFee} isBold={false} fontSize="12px" />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16px', fontWeight: 800, borderTop: '2px solid #0f172a', paddingTop: '10px' }}>
-              <span>TỔNG CỘNG:</span>
-              <CurrencyDisplay amount={invoice.totalAmount} fontSize="18px" color="#2563eb" />
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>7. Dịch vụ (Minibar/Laundry/Damage):</span>
+              <CurrencyDisplay amount={invoice.extraServicesTotal} isBold={false} fontSize="12px" />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-              <span>Đã thanh toán:</span>
-              <CurrencyDisplay amount={invoice.paidAmount} color="#16a34a" />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600, borderTop: '1px dashed #e2e8f0', paddingTop: '4px' }}>
+              <span>8. Thuế suất cơ sở (taxable):</span>
+              <CurrencyDisplay amount={invoice.taxableAmount} fontSize="12px" />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', fontWeight: 700, color: '#dc2626' }}>
-              <span>Còn nợ lại:</span>
-              <CurrencyDisplay amount={invoice.remainingBalance} color="#dc2626" fontSize="16px" />
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span>9. Thuế VAT (10%):</span>
+              <CurrencyDisplay amount={invoice.vatAmount} isBold={false} fontSize="12px" />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '15px', fontWeight: 800, borderTop: '2px solid #0f172a', paddingTop: '8px' }}>
+              <span>10. TỔNG CỘNG (total):</span>
+              <CurrencyDisplay amount={invoice.totalAmount} fontSize="16px" color="#2563eb" />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#16a34a', fontSize: '13px' }}>
+              <span>Cọc đã thu (depositPaid):</span>
+              <CurrencyDisplay amount={invoice.depositPaid} color="#16a34a" />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 800, borderTop: '1px solid #e2e8f0', paddingTop: '6px' }}>
+              <span>11. SỐ DƯ TẤT TOÁN (amountDue):</span>
+              <CurrencyDisplay amount={invoice.amountDue} color={invoice.amountDue > 0 ? '#dc2626' : invoice.amountDue < 0 ? '#0284c7' : '#16a34a'} fontSize="15px" />
             </div>
           </div>
         </div>
       </div>
-
-      <PaymentModal
-        isOpen={isPayModalOpen}
-        invoice={invoice}
-        onClose={() => setIsPayModalOpen(false)}
-        onSuccess={() => {
-          setIsPayModalOpen(false);
-          queryClient.invalidateQueries({ queryKey: ['invoice', invoiceId] });
-        }}
-      />
     </div>
   );
 };

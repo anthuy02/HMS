@@ -2,19 +2,27 @@ import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { serviceHkService } from '../../../api/services/serviceHk.service';
 import { roomService } from '../../../api/services/room.service';
-import { CurrencyDisplay } from '../../../components/common/CurrencyDisplay';
 
 export const RoomServiceOrderPage: React.FC = () => {
   const queryClient = useQueryClient();
-  const [selectedRoomNumber, setSelectedRoomNumber] = useState('');
-  const [selectedServiceId, setSelectedServiceId] = useState('');
+  const [activeTab, setActiveTab] = useState<'CATALOG' | 'DAMAGE'>('CATALOG');
+
+  // Form Service Catalog
+  const [selectedRoomNumber, setSelectedRoomNumber] = useState('103');
+  const [selectedServiceCode, setSelectedServiceCode] = useState('MB01');
   const [quantity, setQuantity] = useState(1);
+
+  // Form Damage (BR-36)
+  const [damageRoomNumber, setDamageRoomNumber] = useState('103');
+  const [damageAmount, setDamageAmount] = useState(200000);
+  const [damageNote, setDamageNote] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{ text: string; isError?: boolean } | null>(null);
 
-  const { data: services = [] } = useQuery({
+  const { data: catalog = [] } = useQuery({
     queryKey: ['services-catalog'],
-    queryFn: serviceHkService.getServicesCatalog,
+    queryFn: serviceHkService.getCatalogItems,
   });
 
   const { data: rooms = [] } = useQuery({
@@ -24,17 +32,12 @@ export const RoomServiceOrderPage: React.FC = () => {
 
   const occupiedRooms = rooms.filter((r) => r.status === 'OCCUPIED');
 
-  const handleOrder = async (e: React.FormEvent) => {
+  const handleOrderCatalog = async (e: React.FormEvent) => {
     e.preventDefault();
     setMsg(null);
-    if (!selectedRoomNumber || !selectedServiceId) {
-      setMsg({ text: 'Vui lòng chọn phòng và dịch vụ.', isError: true });
-      return;
-    }
-
     setLoading(true);
     try {
-      await serviceHkService.orderService(selectedRoomNumber, selectedServiceId, quantity);
+      await serviceHkService.orderService(selectedRoomNumber, selectedServiceCode, quantity);
       setMsg({ text: `Đã thêm dịch vụ thành công vào hóa đơn phòng ${selectedRoomNumber}!` });
       queryClient.invalidateQueries({ queryKey: ['invoices'] });
     } catch (err: any) {
@@ -44,14 +47,30 @@ export const RoomServiceOrderPage: React.FC = () => {
     }
   };
 
+  const handleRecordDamage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setMsg(null);
+    setLoading(true);
+    try {
+      await serviceHkService.recordDamage(damageRoomNumber, damageAmount, damageNote);
+      setMsg({ text: `Đã ghi nhận bồi thường hư hại tài sản vào phòng ${damageRoomNumber}!` });
+      setDamageNote('');
+      queryClient.invalidateQueries({ queryKey: ['invoices'] });
+    } catch (err: any) {
+      setMsg({ text: err.message || 'Lỗi ghi nhận hư hao', isError: true });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div style={{ maxWidth: '640px' }}>
+    <div style={{ maxWidth: '680px' }}>
       <div style={{ marginBottom: '20px' }}>
         <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>
-          [F06 - TC_SVC_01] Gọi Dịch vụ Minibar &amp; Giặt ủi vào Phòng
+          [F06] Dịch vụ Minibar, Giặt ủi &amp; Bồi thường Hư hao (DAMAGE)
         </h1>
         <p style={{ fontSize: '13px', color: '#64748b' }}>
-          Dịch vụ phát sinh chỉ được phép gắn vào các phòng đang có khách lưu trú (<b>OCCUPIED</b>).
+          Chỉ gắn vào các phòng đang có khách lưu trú (<b>OCCUPIED</b>) theo [BR-37].
         </p>
       </div>
 
@@ -61,71 +80,142 @@ export const RoomServiceOrderPage: React.FC = () => {
         </div>
       )}
 
-      <form onSubmit={handleOrder} style={{ backgroundColor: '#fff', borderRadius: '10px', padding: '24px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-        <div>
-          <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Chọn Phòng nhận dịch vụ (Chỉ phòng OCCUPIED)</label>
-          <select
-            required
-            value={selectedRoomNumber}
-            onChange={(e) => setSelectedRoomNumber(e.target.value)}
-            style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-          >
-            <option value="">-- Chọn phòng đang ở --</option>
-            {occupiedRooms.map((r) => (
-              <option key={r.id} value={r.roomNumber}>
-                Phòng {r.roomNumber} ({r.type})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Chọn Dịch vụ / Nước uống</label>
-          <select
-            required
-            value={selectedServiceId}
-            onChange={(e) => setSelectedServiceId(e.target.value)}
-            style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-          >
-            <option value="">-- Chọn dịch vụ trong thực đơn --</option>
-            {services.map((s: any) => (
-              <option key={s.id} value={s.id}>
-                [{s.category}] {s.name} - {s.price.toLocaleString()} ₫
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Số lượng</label>
-          <input
-            type="number"
-            min={1}
-            max={50}
-            required
-            value={quantity}
-            onChange={(e) => setQuantity(Number(e.target.value))}
-            style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
-          />
-        </div>
-
+      {/* Tabs */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
         <button
-          type="submit"
-          disabled={loading || occupiedRooms.length === 0}
+          onClick={() => setActiveTab('CATALOG')}
           style={{
-            marginTop: '8px',
-            padding: '10px',
-            backgroundColor: '#2563eb',
-            color: '#fff',
-            border: 'none',
+            padding: '8px 16px',
             borderRadius: '6px',
+            border: 'none',
+            backgroundColor: activeTab === 'CATALOG' ? '#2563eb' : '#e2e8f0',
+            color: activeTab === 'CATALOG' ? '#fff' : '#475569',
             fontWeight: 600,
-            fontSize: '14px',
+            fontSize: '13px',
           }}
         >
-          {loading ? 'Đang gửi order...' : 'Thêm vào Hóa đơn Phòng'}
+          Minibar &amp; Giặt ủi (BR-34, 35)
         </button>
-      </form>
+        <button
+          onClick={() => setActiveTab('DAMAGE')}
+          style={{
+            padding: '8px 16px',
+            borderRadius: '6px',
+            border: 'none',
+            backgroundColor: activeTab === 'DAMAGE' ? '#dc2626' : '#e2e8f0',
+            color: activeTab === 'DAMAGE' ? '#fff' : '#475569',
+            fontWeight: 600,
+            fontSize: '13px',
+          }}
+        >
+          Bồi thường Hư hao tài sản (BR-36)
+        </button>
+      </div>
+
+      {activeTab === 'CATALOG' ? (
+        <form onSubmit={handleOrderCatalog} style={{ backgroundColor: '#fff', borderRadius: '10px', padding: '24px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Chọn Phòng nhận dịch vụ (OCCUPIED)</label>
+            <select
+              required
+              value={selectedRoomNumber}
+              onChange={(e) => setSelectedRoomNumber(e.target.value)}
+              style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+            >
+              {occupiedRooms.map((r) => (
+                <option key={r.id} value={r.roomNumber}>Phòng {r.roomNumber} ({r.type})</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Mặt hàng dịch vụ trong danh mục (BR-110)</label>
+            <select
+              required
+              value={selectedServiceCode}
+              onChange={(e) => setSelectedServiceCode(e.target.value)}
+              style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+            >
+              {catalog.map((item) => (
+                <option key={item.code} value={item.code}>
+                  [{item.code}] {item.name} - {item.unitPrice.toLocaleString()} ₫
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Số lượng (1 - 99)</label>
+            <input
+              type="number"
+              min={1}
+              max={99}
+              required
+              value={quantity}
+              onChange={(e) => setQuantity(Number(e.target.value))}
+              style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading || occupiedRooms.length === 0}
+            style={{ padding: '10px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 600 }}
+          >
+            {loading ? 'Đang gửi...' : 'Thêm vào Hóa đơn Phòng'}
+          </button>
+        </form>
+      ) : (
+        <form onSubmit={handleRecordDamage} style={{ backgroundColor: '#fff', borderRadius: '10px', padding: '24px', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Chọn Phòng phát sinh hư hao (OCCUPIED)</label>
+            <select
+              required
+              value={damageRoomNumber}
+              onChange={(e) => setDamageRoomNumber(e.target.value)}
+              style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+            >
+              {occupiedRooms.map((r) => (
+                <option key={r.id} value={r.roomNumber}>Phòng {r.roomNumber} ({r.type})</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Tiền bồi thường (1 - 50.000.000 VNĐ) [BR-36]</label>
+            <input
+              type="number"
+              min={1}
+              max={50000000}
+              step={10000}
+              required
+              value={damageAmount}
+              onChange={(e) => setDamageAmount(Number(e.target.value))}
+              style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+            />
+          </div>
+
+          <div>
+            <label style={{ fontSize: '13px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Ghi chú giải trình (1 - 200 ký tự bắt buộc) [BR-36]</label>
+            <textarea
+              required
+              rows={3}
+              placeholder="Ví dụ: Vỡ ly rượu vang minibar, hỏng điều khiển TV..."
+              value={damageNote}
+              onChange={(e) => setDamageNote(e.target.value)}
+              style={{ width: '100%', padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading || occupiedRooms.length === 0}
+            style={{ padding: '10px', backgroundColor: '#dc2626', color: '#fff', border: 'none', borderRadius: '6px', fontWeight: 600 }}
+          >
+            {loading ? 'Đang ghi nhận...' : 'Ghi nhận Khoản bồi thường vào Hóa đơn'}
+          </button>
+        </form>
+      )}
     </div>
   );
 };

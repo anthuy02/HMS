@@ -15,12 +15,42 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const DEFAULT_MOCK_USER: User = {
+  id: 'u-01',
+  username: 'admin01',
+  fullName: 'Nguyễn Quản Trị (Admin)',
+  email: 'admin01@hotel.com',
+  phone: '0901234567',
+  role: 'ADMIN',
+  isActive: true,
+  createdAt: '2026-01-01T00:00:00Z',
+};
+const DEFAULT_MOCK_TOKEN = 'mock-token-admin01';
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(() => {
     const saved = localStorage.getItem('currentUser');
-    return saved ? JSON.parse(saved) : null;
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        // ignore
+      }
+    }
+    // Auto-login default admin in mock mode
+    if (import.meta.env.VITE_USE_MOCK !== 'false') {
+      localStorage.setItem('currentUser', JSON.stringify(DEFAULT_MOCK_USER));
+      localStorage.setItem('token', DEFAULT_MOCK_TOKEN);
+      return DEFAULT_MOCK_USER;
+    }
+    return null;
   });
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
+  const [token, setToken] = useState<string | null>(() => {
+    const saved = localStorage.getItem('token');
+    if (saved) return saved;
+    if (import.meta.env.VITE_USE_MOCK !== 'false') return DEFAULT_MOCK_TOKEN;
+    return null;
+  });
 
   const login = async (credentials: LoginCredentials) => {
     const res = await authService.login(credentials);
