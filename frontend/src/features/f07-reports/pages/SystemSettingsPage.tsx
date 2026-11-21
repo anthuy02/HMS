@@ -77,12 +77,22 @@ export const SystemSettingsPage: React.FC = () => {
             fontWeight: 700,
             color: '#482e24',
             lineHeight: 1.15,
-            margin: '0',
+            margin: '0 0 6px 0',
             letterSpacing: '-0.3px',
           }}
         >
           Cài đặt hệ thống
         </h1>
+        <p
+          style={{
+            fontFamily: '"Nimbus Sans", "Plus Jakarta Sans", sans-serif',
+            fontSize: '13.5px',
+            color: '#73675e',
+            margin: 0,
+          }}
+        >
+          Cấu hình thông tin khách sạn, phụ thu check-in/out và quy định hủy đặt phòng.
+        </p>
       </div>
 
       {/* Main Container Card */}

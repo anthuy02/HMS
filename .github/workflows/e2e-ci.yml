@@ -25,9 +25,15 @@ jobs:
         working-directory: frontend
         run: npm install
 
+      - name: Link Frontend node_modules to Root
+        run: ln -s frontend/node_modules node_modules
+
       - name: Install Playwright Browsers
+        working-directory: frontend
         run: npx playwright install --with-deps chromium
 
       - name: Run Playwright E2E Test Suite (TS01 -> TS05)
         working-directory: frontend
+        env:
+          NODE_PATH: ${{ github.workspace }}/frontend/node_modules
         run: npm run test:e2e
