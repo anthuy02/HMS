@@ -5,3 +5,6 @@ dist-ssr/
 .env.local
 .DS_Store
 Thumbs.db
+target/
+backend/target/
+.vscode/

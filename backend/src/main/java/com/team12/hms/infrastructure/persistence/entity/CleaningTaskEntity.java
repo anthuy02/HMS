@@ -42,6 +42,11 @@ public class CleaningTaskEntity {
     public void setStatus(String status) { this.status = status; }
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
     public Instant getCompletedAt() { return completedAt; }
     public void setCompletedAt(Instant completedAt) { this.completedAt = completedAt; }
+
+    public UserEntity getHousekeeper() { return assignedTo; }
+    public void setHousekeeper(UserEntity housekeeper) { this.assignedTo = housekeeper; }
 }

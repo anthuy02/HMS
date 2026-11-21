@@ -51,13 +51,30 @@ export const InvoiceDetailPage: React.FC = () => {
   }
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+    <div style={{ padding: '4px 8px 32px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '22px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>
-            [F05] Hóa đơn Thanh toán: {invoice.invoiceNumber}
+          <h1
+            style={{
+              fontFamily: '"Playfair Display", Georgia, serif',
+              fontSize: '32px',
+              fontWeight: 700,
+              color: '#482e24',
+              lineHeight: 1.15,
+              margin: '0 0 6px 0',
+              letterSpacing: '-0.3px',
+            }}
+          >
+            Hóa đơn thanh toán {invoice.invoiceNumber}
           </h1>
-          <p style={{ fontSize: '13px', color: '#64748b' }}>
+          <p
+            style={{
+              fontFamily: '"Nimbus Sans", "Plus Jakarta Sans", sans-serif',
+              fontSize: '13.5px',
+              color: '#73675e',
+              margin: 0,
+            }}
+          >
             Phòng {invoice.roomNumber} - Khách hàng: <b>{invoice.guestName}</b> [{invoice.bookingType}]
           </p>
         </div>

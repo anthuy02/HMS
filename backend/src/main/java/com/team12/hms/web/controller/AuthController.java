@@ -22,6 +22,7 @@ public class AuthController {
         this.authUseCase = authUseCase;
     }
 
+    @SuppressWarnings("unchecked")
     @PostMapping("/login")
     public ResponseEntity<AuthDtos.LoginResponse> login(@RequestBody AuthDtos.LoginRequest req) {
         String username = req.username() != null ? req.username() : req.email();

@@ -45,31 +45,31 @@ public class ReservationAppService implements ReservationUseCase {
 
     @Override
     public Map<String, Object> checkAvailability(UUID roomTypeId, LocalDate checkIn, LocalDate checkOut) {
-        if (checkIn == null) checkIn = clockProvider.today();
-        if (checkOut == null) checkOut = checkIn.plusDays(1);
+        final LocalDate effCheckIn = checkIn != null ? checkIn : clockProvider.today();
+        final LocalDate effCheckOut = checkOut != null ? checkOut : effCheckIn.plusDays(1);
 
         long totalEligibleRooms;
         long bookedRooms;
 
         if (roomTypeId != null) {
             totalEligibleRooms = roomPort.countAvailableRoomsByTypeId(roomTypeId);
-            bookedRooms = reservationPort.countOverlappingReservations(roomTypeId, checkIn, checkOut);
+            bookedRooms = reservationPort.countOverlappingReservations(roomTypeId, effCheckIn, effCheckOut);
         } else {
             totalEligibleRooms = roomPort.findAllRooms().stream()
                     .filter(r -> !"OUT_OF_SERVICE".equalsIgnoreCase(r.getStatus().name()))
                     .count();
             bookedRooms = reservationPort.findAll().stream()
                     .filter(r -> ("CONFIRMED".equals(r.getStatus()) || "CHECKED_IN".equals(r.getStatus()))
-                            && r.getCheckInDate().isBefore(checkOut)
-                            && r.getCheckOutDate().isAfter(checkIn))
+                            && r.getCheckInDate().isBefore(effCheckOut)
+                            && r.getCheckOutDate().isAfter(effCheckIn))
                     .count();
         }
 
         long availableCount = Math.max(0, totalEligibleRooms - bookedRooms);
         return Map.of(
             "roomTypeId", roomTypeId != null ? roomTypeId.toString() : "ALL",
-            "checkInDate", checkIn.toString(),
-            "checkOutDate", checkOut.toString(),
+            "checkInDate", effCheckIn.toString(),
+            "checkOutDate", effCheckOut.toString(),
             "totalRooms", totalEligibleRooms,
             "bookedRooms", bookedRooms,
             "availableCount", availableCount,

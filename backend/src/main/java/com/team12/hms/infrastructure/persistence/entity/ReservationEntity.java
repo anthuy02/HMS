@@ -75,6 +75,18 @@ public class ReservationEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
+    @Transient
+    private java.time.LocalTime checkInTime;
+
+    @Transient
+    private java.time.LocalTime checkOutTime;
+
+    @Transient
+    private BigDecimal snapHourlyRateFirstHour = BigDecimal.ZERO;
+
+    @Transient
+    private BigDecimal snapHourlyRateAdditional = BigDecimal.ZERO;
+
     public ReservationEntity() {}
 
     public UUID getId() { return id; }
@@ -118,4 +130,13 @@ public class ReservationEntity {
     public Instant getActualCheckOutTime() { return actualCheckOutTime; }
     public void setActualCheckOutTime(Instant actualCheckOutTime) { this.actualCheckOutTime = actualCheckOutTime; }
     public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+    public java.time.LocalTime getCheckInTime() { return checkInTime; }
+    public void setCheckInTime(java.time.LocalTime checkInTime) { this.checkInTime = checkInTime; }
+    public java.time.LocalTime getCheckOutTime() { return checkOutTime; }
+    public void setCheckOutTime(java.time.LocalTime checkOutTime) { this.checkOutTime = checkOutTime; }
+    public BigDecimal getSnapHourlyRateFirstHour() { return snapHourlyRateFirstHour; }
+    public void setSnapHourlyRateFirstHour(BigDecimal snapHourlyRateFirstHour) { this.snapHourlyRateFirstHour = snapHourlyRateFirstHour; }
+    public BigDecimal getSnapHourlyRateAdditional() { return snapHourlyRateAdditional; }
+    public void setSnapHourlyRateAdditional(BigDecimal snapHourlyRateAdditional) { this.snapHourlyRateAdditional = snapHourlyRateAdditional; }
 }

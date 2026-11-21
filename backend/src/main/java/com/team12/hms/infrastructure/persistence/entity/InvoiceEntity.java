@@ -61,6 +61,24 @@ public class InvoiceEntity {
     @Column(name = "issued_at")
     private Instant issuedAt;
 
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt = Instant.now();
+
+    @Transient
+    private BigDecimal extraAdultSurcharge = BigDecimal.ZERO;
+
+    @Transient
+    private BigDecimal extraChildSurcharge = BigDecimal.ZERO;
+
+    @Transient
+    private BigDecimal serviceFeeBase = BigDecimal.ZERO;
+
+    @Transient
+    private BigDecimal taxableAmount = BigDecimal.ZERO;
+
+    @Transient
+    private Instant paidAt;
+
     public InvoiceEntity() {}
 
     public UUID getId() { return id; }
@@ -71,12 +89,61 @@ public class InvoiceEntity {
     public void setReservation(ReservationEntity reservation) { this.reservation = reservation; }
     public BigDecimal getRoomCharge() { return roomCharge; }
     public void setRoomCharge(BigDecimal roomCharge) { this.roomCharge = roomCharge; }
+    public BigDecimal getHolidaySurcharge() { return holidaySurcharge; }
+    public void setHolidaySurcharge(BigDecimal holidaySurcharge) { this.holidaySurcharge = holidaySurcharge; }
+    public BigDecimal getEarlyCheckInSurcharge() { return earlyCheckInSurcharge; }
+    public void setEarlyCheckInSurcharge(BigDecimal earlyCheckInSurcharge) { this.earlyCheckInSurcharge = earlyCheckInSurcharge; }
+    public BigDecimal getLateCheckOutSurcharge() { return lateCheckOutSurcharge; }
+    public void setLateCheckOutSurcharge(BigDecimal lateCheckOutSurcharge) { this.lateCheckOutSurcharge = lateCheckOutSurcharge; }
+    public BigDecimal getExtraPersonSurcharge() { return extraPersonSurcharge; }
+    public void setExtraPersonSurcharge(BigDecimal extraPersonSurcharge) { this.extraPersonSurcharge = extraPersonSurcharge; }
+    public BigDecimal getExtraAdultSurcharge() { return extraAdultSurcharge != null ? extraAdultSurcharge : extraPersonSurcharge; }
+    public void setExtraAdultSurcharge(BigDecimal extraAdultSurcharge) {
+        this.extraAdultSurcharge = extraAdultSurcharge;
+        this.extraPersonSurcharge = (extraAdultSurcharge != null ? extraAdultSurcharge : BigDecimal.ZERO)
+                .add(extraChildSurcharge != null ? extraChildSurcharge : BigDecimal.ZERO);
+    }
+    public BigDecimal getExtraChildSurcharge() { return extraChildSurcharge != null ? extraChildSurcharge : BigDecimal.ZERO; }
+    public void setExtraChildSurcharge(BigDecimal extraChildSurcharge) {
+        this.extraChildSurcharge = extraChildSurcharge;
+        this.extraPersonSurcharge = (extraAdultSurcharge != null ? extraAdultSurcharge : BigDecimal.ZERO)
+                .add(extraChildSurcharge != null ? extraChildSurcharge : BigDecimal.ZERO);
+    }
+    public BigDecimal getDiscountAmount() { return discountAmount; }
+    public void setDiscountAmount(BigDecimal discountAmount) { this.discountAmount = discountAmount; }
+    public BigDecimal getDiscount() { return discountAmount; }
+    public void setDiscount(BigDecimal discount) { this.discountAmount = discount; }
+    public BigDecimal getServiceFee() { return serviceFee; }
+    public void setServiceFee(BigDecimal serviceFee) { this.serviceFee = serviceFee; }
+    public BigDecimal getServiceFeeBase() { return serviceFeeBase; }
+    public void setServiceFeeBase(BigDecimal serviceFeeBase) { this.serviceFeeBase = serviceFeeBase; }
+    public BigDecimal getServicesTotal() { return servicesTotal; }
+    public void setServicesTotal(BigDecimal servicesTotal) { this.servicesTotal = servicesTotal; }
+    public BigDecimal getExtraServicesTotal() { return servicesTotal; }
+    public void setExtraServicesTotal(BigDecimal extraServicesTotal) { this.servicesTotal = extraServicesTotal; }
+    public BigDecimal getTaxableAmount() { return taxableAmount; }
+    public void setTaxableAmount(BigDecimal taxableAmount) { this.taxableAmount = taxableAmount; }
+    public BigDecimal getVatAmount() { return vatAmount; }
+    public void setVatAmount(BigDecimal vatAmount) { this.vatAmount = vatAmount; }
     public BigDecimal getTotalAmount() { return totalAmount; }
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
+    public BigDecimal getDepositDeducted() { return depositDeducted; }
+    public void setDepositDeducted(BigDecimal depositDeducted) { this.depositDeducted = depositDeducted; }
+    public BigDecimal getDepositPaid() { return depositDeducted; }
+    public void setDepositPaid(BigDecimal depositPaid) { this.depositDeducted = depositPaid; }
     public BigDecimal getAmountDue() { return amountDue; }
     public void setAmountDue(BigDecimal amountDue) { this.amountDue = amountDue; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
     public Instant getIssuedAt() { return issuedAt; }
     public void setIssuedAt(Instant issuedAt) { this.issuedAt = issuedAt; }
+    public Instant getPaidAt() { return paidAt != null ? paidAt : issuedAt; }
+    public void setPaidAt(Instant paidAt) {
+        this.paidAt = paidAt;
+        if (this.issuedAt == null && paidAt != null) {
+            this.issuedAt = paidAt;
+        }
+    }
+    public Instant getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
 }
