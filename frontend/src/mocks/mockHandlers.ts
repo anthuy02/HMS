@@ -653,7 +653,7 @@ export const mockHandlers = {
     }
 
     const invoices = mockDb.getInvoices();
-    let invoice = invoices.find((inv) => inv.reservationId === res.id);
+    const invoice = invoices.find((inv) => inv.reservationId === res.id);
     if (!invoice) throw new Error('Chưa có hóa đơn cho đơn đặt phòng này.');
 
     return invoice;
@@ -679,7 +679,7 @@ export const mockHandlers = {
 
     // Tính toán hóa đơn đầy đủ với phụ thu trả muộn (BR-11, BR-50)
     const invoices = mockDb.getInvoices();
-    let invoice = invoices.find((inv) => inv.reservationId === res.id);
+    const invoice = invoices.find((inv) => inv.reservationId === res.id);
     if (!invoice) throw new Error('Không tìm thấy hóa đơn.');
 
     const nights = Math.max(1, (new Date(res.checkOutDate).getTime() - new Date(res.checkInDate).getTime()) / (1000 * 3600 * 24));
