@@ -1,0 +1,9 @@
+package com.team12.hms.domain.reservation;
+
+public enum ReservationStatus {
+    CONFIRMED,
+    CHECKED_IN,
+    CHECKED_OUT,
+    CANCELLED,
+    NO_SHOW
+}

@@ -1,0 +1,51 @@
+name: DB Constraints CI (PostgreSQL 17)
+
+on:
+  push:
+    paths:
+      - 'db/**'
+      - '.github/workflows/db-constraints-ci.yml'
+  pull_request:
+    paths:
+      - 'db/**'
+      - '.github/workflows/db-constraints-ci.yml'
+
+jobs:
+  test-db-constraints:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: hms_test_db
+          POSTGRES_USER: hms_tester
+          POSTGRES_PASSWORD: test_password_2026
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PostgreSQL client tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Run Schema Migration (V1__init_schema.sql)
+        run: |
+          PGPASSWORD=test_password_2026 psql -h localhost -U hms_tester -d hms_test_db -f db/migration/V1__init_schema.sql
+
+      - name: Run Seed Data (V2__seed_data.sql)
+        run: |
+          PGPASSWORD=test_password_2026 psql -h localhost -U hms_tester -d hms_test_db -f db/migration/V2__seed_data.sql
+
+      - name: Execute 25 Database Constraints Test Cases
+        run: |
+          PGPASSWORD=test_password_2026 psql -h localhost -U hms_tester -d hms_test_db -f db/test/test_constraints.sql

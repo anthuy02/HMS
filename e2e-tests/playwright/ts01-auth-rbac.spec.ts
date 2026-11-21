@@ -12,12 +12,12 @@ test.describe('TS01: Xác thực & Phân quyền Truy cập (RBAC - BR-70 -> BR-
 
     // Chuyển hướng thành công và có thể vào /users
     await page.goto('/users');
-    await expect(page.locator('h1')).toContainText('[F01 - AUTH_01] Quản lý Người dùng');
+    await expect(page.locator('h1')).toContainText('Quản lý nhân viên');
     await expect(page.locator('text=admin01')).toBeVisible();
 
     // ADMIN có thể vào /system-settings
     await page.goto('/system-settings');
-    await expect(page.locator('h1')).toContainText('Cấu hình Tham số Hệ thống');
+    await expect(page.locator('h1')).toContainText('Cài đặt hệ thống');
   });
 
   test('TC_AUTH_04: Lễ tân (letan01 - RECEPTIONIST) truy cập trái quyền /users bị điều hướng sang 403 Forbidden', async ({ page }) => {

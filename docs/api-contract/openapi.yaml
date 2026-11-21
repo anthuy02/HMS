@@ -1,169 +1,451 @@
 openapi: 3.0.3
 info:
-  title: Hotel Management System (HMS) API
-  description: Hợp đồng REST API chuẩn cho 7 modules (F01 -> F07)
-  version: 1.0.0
+  title: Hotel Management System (HMS) REST API Contract
+  description: >
+    Hợp đồng giao tiếp REST JSON chuẩn hóa giữa Frontend React và Backend Spring Boot 3
+    theo chuẩn kiến trúc SE113, tuân thủ Business Rules v1.2 (BR-01 -> BR-124) và CSDL PostgreSQL v2.
+  version: 2.0.0
 
 servers:
   - url: http://localhost:8080/api
-    description: Mock or Real Backend Server
+    description: Local Spring Boot 3 API Server
+  - url: https://api.hms-hotel.vn/api
+    description: Production API Gateway
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Opaque-UUID
+      description: Token phiên đăng nhập 30 phút (BR-72, BR-73)
+
+  parameters:
+    IdempotencyKeyHeader:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Khóa chống lặp giao dịch tài chính & thay đổi trạng thái (BR-90, BR-91)
+
+  schemas:
+    RoomStatusEnum:
+      type: string
+      enum: [AVAILABLE, RESERVED, OCCUPIED, CLEANING, OUT_OF_SERVICE]
+      description: 5 trạng thái phòng chuẩn hóa của DB v2 (BR-65, BR-69, BR-104)
+
+    BookingTypeEnum:
+      type: string
+      enum: [NIGHTLY, HOURLY]
+
+    ReservationStatusEnum:
+      type: string
+      enum: [CONFIRMED, CHECKED_IN, CHECKED_OUT, CANCELLED, NO_SHOW]
+
+    ErrorResponse:
+      type: object
+      required: [status, error, message, timestamp]
+      properties:
+        status:
+          type: integer
+          example: 409
+        error:
+          type: string
+          example: Conflict
+        message:
+          type: string
+          example: Phòng đã có khách nhận, không thể check-in lại.
+        timestamp:
+          type: string
+          format: date-time
+
+security:
+  - BearerAuth: []
 
 paths:
+  # ============================================================================
+  # MODULE 1: AUTH & USER MANAGEMENT [F01]
+  # ============================================================================
   /auth/login:
     post:
-      summary: Đăng nhập hệ thống [F01]
+      summary: Đăng nhập hệ thống [F01 - BR-70 -> BR-78]
+      security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [email, password]
+              required: [username, password]
               properties:
-                email:
+                username:
                   type: string
-                  example: admin@hotel.com
+                  example: admin01
                 password:
                   type: string
-                  example: admin123
+                  example: Hotel@2026
       responses:
         '200':
-          description: Đăng nhập thành công, trả về JWT Token và User Info
+          description: Đăng nhập thành công, trả về opaque token và thông tin người dùng
         '401':
-          description: Thông tin đăng nhập không hợp lệ
+          description: Sai thông tin đăng nhập hoặc tài khoản đang bị khóa 15 phút (BR-71)
+        '422':
+          description: Mật khẩu không thỏa mãn 8..64 ký tự Unicode (BR-70)
+
+  /auth/logout:
+    post:
+      summary: Đăng xuất và hủy token phiên hiện tại [F01]
+      responses:
+        '200':
+          description: Đăng xuất thành công
+
+  /auth/me:
+    get:
+      summary: Lấy thông tin tài khoản đang đăng nhập [F01]
+      responses:
+        '200':
+          description: Thông tin user hiện hành
 
   /auth/users:
     get:
-      summary: Lấy danh sách tài khoản [F01 - AUTH_01]
+      summary: Danh sách người dùng hệ thống [F01 - AUTH_01, BR-93]
       responses:
         '200':
-          description: Danh sách tài khoản người dùng
+          description: Danh sách users
         '403':
-          description: Không đủ quyền truy cập (Chỉ dành cho ADMIN)
+          description: Chỉ ADMIN được xem danh sách người dùng
     post:
-      summary: Tạo mới tài khoản [F01 - AUTH_01]
+      summary: Tạo mới tài khoản người dùng [F01 - BR-93, BR-94]
       responses:
         '201':
           description: Tạo tài khoản thành công
+        '403':
+          description: Chỉ ADMIN được tạo tài khoản
+        '422':
+          description: Lỗi dữ liệu đầu vào (tên trùng, mật khẩu yếu)
 
+  /auth/users/{id}:
+    put:
+      summary: Cập nhật thông tin / vai trò tài khoản [F01 - BR-93]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Cập nhật thành công
+
+  /auth/users/{id}/toggle-active:
+    patch:
+      summary: Vô hiệu hóa hoặc kích hoạt lại tài khoản [F01 - BR-94]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Cập nhật trạng thái active thành công
+        '409':
+          description: Không được phép vô hiệu hóa tài khoản ADMIN cuối cùng
+
+  # ============================================================================
+  # MODULE 2: ROOM & ROOM TYPE MANAGEMENT [F02]
+  # ============================================================================
   /rooms:
     get:
-      summary: Lấy danh sách phòng và sơ đồ trạng thái [F02]
+      summary: Danh sách tất cả các phòng kèm trạng thái [F02 - BR-65]
       responses:
         '200':
           description: Danh sách phòng hiện có
     post:
-      summary: Thêm phòng mới [F02 - ROOM_01]
+      summary: Tạo mới phòng [F02 - BR-100]
       responses:
         '201':
-          description: Thêm phòng thành công
+          description: Tạo phòng thành công (khởi tạo ở trạng thái AVAILABLE)
+        '422':
+          description: Số phòng không hợp lệ hoặc request có trường status
 
   /rooms/{id}:
     put:
-      summary: Cập nhật thông tin và đơn giá phòng [F02 - ROOM_01]
+      summary: Cập nhật phòng hoặc đưa vào bảo trì OUT_OF_SERVICE [F02 - BR-104]
       parameters:
         - name: id
           in: path
           required: true
-          schema:
-            type: string
+          schema: { type: string, format: uuid }
       responses:
         '200':
           description: Cập nhật phòng thành công
+        '409':
+          description: Phòng đang có khách hoặc vi phạm chuyển trạng thái (BR-69)
+    delete:
+      summary: Xóa mềm phòng [F02 - BR-102]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204':
+          description: Xóa mềm phòng thành công
+        '409':
+          description: Phòng đã từng có đơn đặt, chỉ được đưa vào bảo trì
 
+  /room-types:
+    get:
+      summary: Danh sách loại phòng, sức chứa và đơn giá [F02 - BR-101]
+      responses:
+        '200':
+          description: Danh sách các loại phòng
+    post:
+      summary: Tạo mới loại phòng [F02 - BR-101]
+      responses:
+        '201':
+          description: Tạo loại phòng thành công
+        '403':
+          description: Chỉ MANAGER được sửa giá phòng (BR-75)
+
+  # ============================================================================
+  # MODULE 3: RESERVATIONS [F03]
+  # ============================================================================
   /reservations:
     get:
-      summary: Danh sách đơn đặt phòng [F03]
+      summary: Tra cứu và lọc danh sách đơn đặt phòng [F03 - BR-66]
       responses:
         '200':
-          description: Danh sách các đơn đặt phòng
+          description: Danh sách đơn đặt
     post:
-      summary: Đặt phòng mới [F03 - BR01, BR02]
+      summary: Tạo đơn đặt phòng NIGHTLY / HOURLY kèm thu cọc [F03 - BR-03, BR-04, BR-20]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
       responses:
         '201':
-          description: Tạo đơn đặt phòng thành công
+          description: Đặt phòng thành công
         '409':
-          description: Trùng lặp lịch đặt phòng (BR02)
+          description: Trùng lịch đặt hoặc hết phòng thuộc loại (BR-60, BR-64)
+        '422':
+          description: Thông tin khách hoặc ngày giờ không hợp lệ (BR-09, BR-62)
 
-  /stays/check-in:
-    post:
-      summary: Xác nhận nhận phòng [F04 - BR03]
-      responses:
-        '200':
-          description: Check-in thành công, phòng đổi sang OCCUPIED
-
-  /stays/check-out:
-    post:
-      summary: Xác nhận trả phòng [F04 - BR04]
-      responses:
-        '200':
-          description: Check-out thành công, tính phụ thu và đổi phòng sang DIRTY
-
-  /billing/invoices/{id}:
+  /reservations/check-availability:
     get:
-      summary: Lấy thông tin chi tiết hóa đơn [F05 - BR05]
+      summary: Kiểm tra nguồn cung phòng trống theo khoảng thời gian [F03 - BR-60, BR-63]
       parameters:
-        - name: id
-          in: path
+        - name: roomTypeId
+          in: query
           required: true
-          schema:
-            type: string
+          schema: { type: string, format: uuid }
+        - name: checkIn
+          in: query
+          required: true
+          schema: { type: string }
+        - name: checkOut
+          in: query
+          required: true
+          schema: { type: string }
       responses:
         '200':
-          description: Thông tin hóa đơn chi tiết
+          description: Số lượng phòng còn trống theo từng mốc thời gian
 
-  /billing/invoices/{id}/pay:
-    post:
-      summary: Thanh toán hóa đơn [F05 - BR06]
+  /reservations/{id}/reschedule:
+    put:
+      summary: Đổi lịch đơn đặt phòng NIGHTLY khi H >= 24h [F03 - BR-25]
       parameters:
         - name: id
           in: path
           required: true
-          schema:
-            type: string
-        - name: Idempotency-Key
-          in: header
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: Khóa chống lặp giao dịch thanh toán (BR06)
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
       responses:
         '200':
-          description: Thanh toán thành công
+          description: Đổi lịch thành công, tự động điều chỉnh cọc
+        '409':
+          description: H < 24h hoặc khoảng ngày mới không còn phòng trống
+
+  /reservations/{id}/cancel:
+    post:
+      summary: Hủy đơn đặt phòng và tính toán hoàn cọc theo H [F03 - BR-21, BR-22]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      responses:
+        '200':
+          description: Hủy đơn thành công, trả về tỷ lệ hoàn cọc (100%, 50%, 0%)
+
+  # ============================================================================
+  # MODULE 4: FRONT DESK CHECK-IN / CHECK-OUT [F04]
+  # ============================================================================
+  /reservations/{id}/check-in:
+    post:
+      summary: Xác nhận nhận phòng -> OCCUPIED [F04 - BR-80, BR-81, BR-82]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      responses:
+        '200':
+          description: Check-in thành công, phòng chuyển OCCUPIED
+        '409':
+          description: Đơn đã hủy hoặc phòng không ở trạng thái AVAILABLE/RESERVED
+
+  /reservations/{id}/check-out:
+    post:
+      summary: Xác nhận trả phòng -> phòng chuyển CLEANING [F04 - BR-83, BR-84, BR-91, BR-111]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      responses:
+        '200':
+          description: Check-out thành công, xuất hóa đơn ISSUED và tạo task dọn phòng PENDING
+        '409':
+          description: Đơn chưa thanh toán đủ số dư nợ hoặc chưa ở trạng thái CHECKED_IN
+
+  /reservations/{id}/interim-balance:
+    get:
+      summary: Tra cứu số dư tạm tính cho phòng đang lưu trú [F04 - BR-87]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Bảng kê chi tiết chi phí tạm tính tính đến hiện tại
+
+  # ============================================================================
+  # MODULE 5: BILLING & INVOICES [F05]
+  # ============================================================================
+  /invoices:
+    get:
+      summary: Lấy sổ cái hóa đơn [F05]
+      responses:
+        '200':
+          description: Danh sách hóa đơn
+
+  /invoices/{id}:
+    get:
+      summary: Chi tiết bảng kê 11 bước của hóa đơn [F05 - BR-50, BR-54]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Chi tiết 11 dòng tiền bất biến của hóa đơn
+
+  /invoices/{id}/pay:
+    post:
+      summary: Thu tiền quyết toán hoặc hoàn trả cọc thừa [F05 - BR-84..86, BR-90]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      responses:
+        '200':
+          description: Ghi nhận thanh toán thành công
         '400':
-          description: Số tiền thanh toán vượt quá số dư còn lại (BR06)
+          description: Số tiền thanh toán không khớp đúng amountDue cần thu
 
-  /housekeeping/dirty-rooms:
+  # ============================================================================
+  # MODULE 6: SERVICES & HOUSEKEEPING [F06]
+  # ============================================================================
+  /service-catalog:
     get:
-      summary: Lấy danh sách các phòng đang bẩn [F06 - TC_HK_01]
+      summary: Danh mục đồ Minibar và Giặt ủi [F06 - BR-110]
       responses:
         '200':
-          description: Danh sách phòng trạng thái DIRTY
+          description: Danh mục các mặt hàng dịch vụ active
 
-  /housekeeping/clean/{roomId}:
+  /reservations/{id}/services:
     post:
-      summary: Xác nhận đã hoàn tất dọn phòng [F06 - BR07, TC_HK_02]
+      summary: Ghi Minibar, Giặt ủi hoặc Bồi thường Hư hao (DAMAGE) vào phòng [F06 - BR-34..37]
       parameters:
-        - name: roomId
+        - name: id
           in: path
           required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Chuyển trạng thái phòng DIRTY -> AVAILABLE
-
-  /services/orders:
-    post:
-      summary: Đặt dịch vụ Minibar/Giặt ủi gắn vào phòng [F06 - TC_SVC_01]
+          schema: { type: string, format: uuid }
       responses:
         '201':
-          description: Thêm chi phí dịch vụ vào hóa đơn thành công
+          description: Thêm dòng chi phí dịch vụ vào đơn CHECKED_IN thành công
+
+  /cleaning-tasks:
+    get:
+      summary: Danh sách nhiệm vụ dọn buồng phòng [F06 - BR-112, BR-113]
+      responses:
+        '200':
+          description: Danh sách task theo phân quyền người dọn / quản lý
+
+  /cleaning-tasks/{id}/status:
+    patch:
+      summary: Chuyển trạng thái dọn PENDING -> IN_PROGRESS -> DONE [F06 - BR-112, BR-114]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Cập nhật thành công, khi DONE phòng tự động chuyển CLEANING -> AVAILABLE
+        '409':
+          description: Nhảy cóc trạng thái hoặc xung đột đồng thời 2 nhân viên dọn (BR-114)
+
+  # ============================================================================
+  # MODULE 7: SYSTEM CONFIG & REPORTS [UC-03 & F07]
+  # ============================================================================
+  /config:
+    get:
+      summary: Lấy tham số cấu hình hệ thống (Cọc, Phí dịch vụ, VAT) [UC-03 - BR-88]
+      responses:
+        '200':
+          description: Thông tin tỷ lệ tài chính
+    put:
+      summary: Cập nhật tham số hệ thống [UC-03 - BR-88]
+      responses:
+        '200':
+          description: Cập nhật thành công (Chỉ dành cho ADMIN)
+
+  /holidays:
+    get:
+      summary: Danh sách ngày lễ cố định [UC-03 - BR-89]
+      responses:
+        '200':
+          description: Danh sách ngày lễ
 
   /reports/revenue:
     get:
-      summary: Báo cáo doanh thu kỳ T [F07 - REP_01]
+      summary: Báo cáo tổng hợp doanh thu theo kỳ T <= 366 ngày [F07 - BR-120..123]
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: true
+          schema: { type: string, format: date }
       responses:
         '200':
-          description: Dữ liệu doanh thu & tỷ lệ lấp đầy phòng
+          description: Thống kê doanh thu, tách riêng dòng tiền hoàn và cọc mất
+        '403':
+          description: Lễ tân và Nhân viên dọn phòng không được xem doanh thu (BR-124)
+
+  /reports/today-operations:
+    get:
+      summary: Bảng phân bổ vận hành hôm nay cho Lễ tân [F07 - BR-124]
+      responses:
+        '200':
+          description: Số đơn dự kiến check-in, check-out, và hủy trong ngày
