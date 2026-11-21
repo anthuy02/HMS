@@ -22,4 +22,22 @@ export const authService = {
     const res = await axiosClient.post<User>('/auth/users', userData);
     return res.data;
   },
+
+  toggleUserActive: async (userId: string, currentAdminId: string): Promise<User> => {
+    if (isMock) return mockHandlers.toggleUserActive(userId, currentAdminId);
+    const res = await axiosClient.post<User>(`/auth/users/${userId}/toggle-active`, { currentAdminId });
+    return res.data;
+  },
+
+  updateUser: async (userId: string, updateData: Partial<User>): Promise<User> => {
+    if (isMock) {
+      const users = (await mockHandlers.getUsers()) as any[];
+      const user = users.find((u) => u.id === userId);
+      if (!user) throw new Error('Người dùng không tồn tại.');
+      Object.assign(user, updateData);
+      return user;
+    }
+    const res = await axiosClient.put<User>(`/auth/users/${userId}`, updateData);
+    return res.data;
+  },
 };

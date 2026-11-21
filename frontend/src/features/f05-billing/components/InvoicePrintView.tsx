@@ -58,11 +58,20 @@ export const InvoicePrintView: React.FC<InvoicePrintViewProps> = ({ invoice, onB
       </table>
 
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px', fontSize: '13px', borderTop: '1px solid #0f172a', paddingTop: '10px' }}>
-        <div>Tạm tính: <CurrencyDisplay amount={invoice.subTotal} /></div>
-        <div>Chiết khấu ({invoice.discountPercent}%): - <CurrencyDisplay amount={invoice.discountAmount} color="#16a34a" /></div>
+        <div>Tiền phòng: <CurrencyDisplay amount={invoice.roomCharge} /></div>
+        {invoice.discount > 0 && (
+          <div>Chiết khấu: - <CurrencyDisplay amount={invoice.discount} color="#16a34a" /></div>
+        )}
+        {invoice.serviceFee > 0 && (
+          <div>Phí phục vụ (5%): <CurrencyDisplay amount={invoice.serviceFee} /></div>
+        )}
         <div>Thuế GTGT (10%): <CurrencyDisplay amount={invoice.vatAmount} /></div>
         <div style={{ fontSize: '16px', fontWeight: 800 }}>TỔNG THANH TOÁN: <CurrencyDisplay amount={invoice.totalAmount} fontSize="17px" /></div>
-        <div>Đã thu: <CurrencyDisplay amount={invoice.paidAmount} color="#16a34a" /></div>
+        <div>Tiền cọc đã trả: <CurrencyDisplay amount={invoice.depositPaid} color="#16a34a" /></div>
+        <div style={{ fontSize: '15px', fontWeight: 700, color: invoice.amountDue > 0 ? '#dc2626' : '#16a34a' }}>
+          {invoice.amountDue > 0 ? 'Cần thanh toán thêm: ' : invoice.amountDue < 0 ? 'Hoàn lại khách: ' : 'Đã tất toán (0 ₫)'}
+          <CurrencyDisplay amount={Math.abs(invoice.amountDue)} />
+        </div>
       </div>
 
       <div style={{ marginTop: '40px', display: 'flex', justifyContent: 'space-between', textAlign: 'center', fontSize: '13px' }}>

@@ -6,6 +6,12 @@ import { getIdempotencyHeaders } from '../idempotencyHelper';
 const isMock = import.meta.env.VITE_USE_MOCK !== 'false';
 
 export const billingService = {
+  getInvoices: async (): Promise<Invoice[]> => {
+    if (isMock) return mockHandlers.getInvoices();
+    const res = await axiosClient.get<Invoice[]>('/billing/invoices');
+    return res.data;
+  },
+
   getInvoiceById: async (invoiceId: string): Promise<Invoice | null> => {
     if (isMock) return mockHandlers.getInvoiceById(invoiceId);
     const res = await axiosClient.get<Invoice>(`/billing/invoices/${invoiceId}`);

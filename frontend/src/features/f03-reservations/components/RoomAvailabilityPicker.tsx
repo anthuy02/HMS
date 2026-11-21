@@ -35,6 +35,7 @@ export const RoomAvailabilityPicker: React.FC<RoomAvailabilityPickerProps> = ({
     setLoading(true);
     try {
       const rooms = await reservationService.checkAvailability({
+        bookingType: 'NIGHTLY',
         checkInDate,
         checkOutDate,
         guestCount,

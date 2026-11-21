@@ -12,7 +12,7 @@ interface PaymentModalProps {
 }
 
 export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, invoice, onClose, onSuccess }) => {
-  const [amount, setAmount] = useState(invoice.remainingBalance);
+  const [amount, setAmount] = useState(invoice.amountDue || 0);
   const [method, setMethod] = useState<PaymentMethod>('BANK_TRANSFER');
   const [note, setNote] = useState('');
   const [idempotencyKey] = useState(() => generateIdempotencyKey()); // Sinh UUID v4 chống lặp (BR06)
@@ -30,8 +30,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, invoice, onC
       setError('Số tiền thanh toán phải lớn hơn 0.');
       return;
     }
-    if (amount > invoice.remainingBalance) {
-      setError(`Quy tắc [BR06]: Chặn thanh toán thừa! Số tiền nhập vượt quá dư nợ (${invoice.remainingBalance.toLocaleString()} ₫).`);
+    if (amount > invoice.amountDue) {
+      setError(`Quy tắc [BR06]: Chặn thanh toán thừa! Số tiền nhập vượt quá dư nợ (${invoice.amountDue.toLocaleString()} ₫).`);
       return;
     }
 
@@ -53,7 +53,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, invoice, onC
           [BR06] Thu tiền Hóa đơn {invoice.invoiceNumber}
         </h3>
         <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '14px' }}>
-          Dư nợ còn lại: <CurrencyDisplay amount={invoice.remainingBalance} color="#dc2626" />
+          Dư nợ còn lại: <CurrencyDisplay amount={invoice.amountDue} color="#dc2626" />
         </p>
 
         {error && <div style={{ padding: '8px 12px', backgroundColor: '#fee2e2', color: '#dc2626', borderRadius: '6px', fontSize: '13px', marginBottom: '14px' }}>{error}</div>}
@@ -64,7 +64,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, invoice, onC
             <input
               type="number"
               required
-              max={invoice.remainingBalance}
+              max={invoice.amountDue}
               value={amount}
               onChange={(e) => setAmount(Number(e.target.value))}
               style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px' }}
