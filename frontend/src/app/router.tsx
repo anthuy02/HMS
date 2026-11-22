@@ -122,7 +122,7 @@ export const router = createBrowserRouter([
       {
         path: 'housekeeping',
         element: (
-          <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'HOUSEKEEPER']}>
+          <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'RECEPTIONIST', 'HOUSEKEEPER']}>
             <HousekeepingBoardPage />
           </ProtectedRoute>
         ),

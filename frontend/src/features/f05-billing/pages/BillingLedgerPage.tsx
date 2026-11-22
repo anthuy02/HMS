@@ -329,12 +329,22 @@ export const BillingLedgerPage: React.FC = () => {
             fontWeight: 700,
             color: '#482e24',
             lineHeight: 1.15,
-            margin: '0',
+            margin: '0 0 6px 0',
             letterSpacing: '-0.3px',
           }}
         >
           Hóa đơn / Quyết toán
         </h1>
+        <p
+          style={{
+            fontFamily: '"Nimbus Sans", "Plus Jakarta Sans", sans-serif',
+            fontSize: '13.5px',
+            color: '#73675e',
+            margin: 0,
+          }}
+        >
+          Sổ cái theo dõi doanh thu, quyết toán công nợ và lịch sử thanh toán hóa đơn.
+        </p>
       </div>
 
       {/* Control Bar: Search + Filters + Export */}

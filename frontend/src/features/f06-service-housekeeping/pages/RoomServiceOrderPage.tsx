@@ -64,13 +64,30 @@ export const RoomServiceOrderPage: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: '680px' }}>
-      <div style={{ marginBottom: '20px' }}>
-        <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>
-          [F06] Dịch vụ Minibar, Giặt ủi &amp; Bồi thường Hư hao (DAMAGE)
+    <div style={{ padding: '4px 8px 32px', maxWidth: '800px' }}>
+      <div style={{ marginBottom: '22px' }}>
+        <h1
+          style={{
+            fontFamily: '"Playfair Display", Georgia, serif',
+            fontSize: '32px',
+            fontWeight: 700,
+            color: '#482e24',
+            lineHeight: 1.15,
+            margin: '0 0 6px 0',
+            letterSpacing: '-0.3px',
+          }}
+        >
+          Gọi Dịch vụ Phòng &amp; Báo hỏng Hư hại
         </h1>
-        <p style={{ fontSize: '13px', color: '#64748b' }}>
-          Chỉ gắn vào các phòng đang có khách lưu trú (<b>OCCUPIED</b>) theo [BR-37].
+        <p
+          style={{
+            fontFamily: '"Nimbus Sans", "Plus Jakarta Sans", sans-serif',
+            fontSize: '13.5px',
+            color: '#73675e',
+            margin: 0,
+          }}
+        >
+          Ghi nhận dịch vụ minibar, giặt ủi và bồi thường hư hại tài sản phòng đang lưu trú.
         </p>
       </div>
 
@@ -108,7 +125,7 @@ export const RoomServiceOrderPage: React.FC = () => {
             fontSize: '13px',
           }}
         >
-          Bồi thường Hư hao tài sản (BR-36)
+          Bồi thường Hư hao (BR-36)
         </button>
       </div>
 

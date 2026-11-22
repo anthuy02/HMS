@@ -10,8 +10,8 @@ test.describe('TS02: Vòng đời Khách & Trạng thái Phòng (BR01 -> BR08, B
 
     // 2. Vào màn hình Đặt phòng [F03] và mở form tạo đơn mới (hỗ trợ Nightly & Hourly)
     await page.goto('/reservations');
-    await expect(page.locator('h1')).toContainText('Danh sách Đơn Đặt Phòng');
-    await page.click('text=+ Tạo Đơn Đặt Phòng Mới');
+    await expect(page.locator('h1')).toContainText('Quản lý đặt phòng');
+    await page.click('text=+ Thêm đặt phòng');
 
     // Kiểm tra tab Nightly và Hourly
     await expect(page.locator('text=Theo đêm (Nightly)')).toBeVisible();
@@ -19,7 +19,7 @@ test.describe('TS02: Vòng đời Khách & Trạng thái Phòng (BR01 -> BR08, B
 
     // 3. Đến Bàn lễ tân [F04] thực hiện nhận phòng / tra cứu số dư tạm tính
     await page.goto('/front-desk');
-    await expect(page.locator('h1')).toContainText('Bàn Làm Việc Lễ Tân');
+    await expect(page.locator('h1')).toContainText('Check-in / Check-out');
 
     // 4. Gọi dịch vụ Minibar / Báo hỏng hư hao [F06 - DAMAGE BR-36]
     await page.goto('/service-orders');

@@ -291,12 +291,22 @@ export const ReservationListPage: React.FC = () => {
               fontWeight: 700,
               color: '#482e24',
               lineHeight: 1.15,
-              margin: 0,
+              margin: '0 0 6px 0',
               letterSpacing: '-0.3px',
             }}
           >
             Quản lý đặt phòng
           </h1>
+          <p
+            style={{
+              fontFamily: '"Nimbus Sans", "Plus Jakarta Sans", sans-serif',
+              fontSize: '13.5px',
+              color: '#73675e',
+              margin: 0,
+            }}
+          >
+            Theo dõi trạng thái đơn đặt phòng theo ngày, theo giờ và lịch biểu lưu trú.
+          </p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

@@ -176,7 +176,7 @@ export const FrontDeskOperationPage: React.FC = () => {
       {/* ─────────────────────────────────────────────────────────────
           1. PAGE TITLE BAR
          ───────────────────────────────────────────────────────────── */}
-      <div>
+      <div style={{ marginBottom: '16px' }}>
         <h1
           style={{
             fontFamily: '"Playfair Display", Georgia, serif',
@@ -184,12 +184,22 @@ export const FrontDeskOperationPage: React.FC = () => {
             fontWeight: 700,
             color: '#482e24',
             lineHeight: 1.15,
-            margin: '0 0 16px 0',
+            margin: '0 0 6px 0',
             letterSpacing: '-0.3px',
           }}
         >
           Check-in / Check-out
         </h1>
+        <p
+          style={{
+            fontFamily: '"Nimbus Sans", "Plus Jakarta Sans", sans-serif',
+            fontSize: '13.5px',
+            color: '#73675e',
+            margin: 0,
+          }}
+        >
+          Vận hành nghiệp vụ nhận phòng, trả phòng và quyết toán chi phí tại quầy lễ tân.
+        </p>
       </div>
 
       {/* ─────────────────────────────────────────────────────────────

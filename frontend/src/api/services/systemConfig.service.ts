@@ -20,7 +20,7 @@ export const systemConfigService = {
 
   getHolidays: async (): Promise<Holiday[]> => {
     if (isMock) return mockHandlers.getHolidays();
-    const res = await axiosClient.get<Holiday[]>('/config/holidays');
+    const res = await axiosClient.get<Holiday[]>('/holidays');
     return res.data;
   },
 
