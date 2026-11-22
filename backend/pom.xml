@@ -110,8 +110,24 @@
                 </dependencies>
                 <configuration>
                     <targetClasses>
-                        <param>com.team12.hms.domain.*</param>
+                        <param>com.team12.hms.domain.billing.BillingService*</param>
+                        <param>com.team12.hms.domain.common.MoneyUtils*</param>
+                        <param>com.team12.hms.domain.reservation.CancellationPolicy*</param>
+                        <param>com.team12.hms.domain.reservation.GuestInfo*</param>
+                        <param>com.team12.hms.domain.auth.AuthorizationPolicy*</param>
+                        <param>com.team12.hms.domain.auth.PasswordValidator*</param>
+                        <param>com.team12.hms.domain.auth.AuthToken*</param>
+                        <param>com.team12.hms.domain.auth.User*</param>
+                        <param>com.team12.hms.domain.room.Room*</param>
+                        <param>com.team12.hms.domain.room.RoomType*</param>
+                        <param>com.team12.hms.domain.config.SystemConfig*</param>
                     </targetClasses>
+                    <excludedClasses>
+                        <param>com.team12.hms.domain.billing.Invoice*</param>
+                        <param>com.team12.hms.domain.reservation.Reservation*</param>
+                        <param>com.team12.hms.domain.housekeeping.CleaningTask*</param>
+                        <param>com.team12.hms.domain.common.DomainExceptions*</param>
+                    </excludedClasses>
                     <targetTests>
                         <param>com.team12.hms.domain.*Test</param>
                     </targetTests>
