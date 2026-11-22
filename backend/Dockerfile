@@ -2,7 +2,8 @@
 FROM maven:3.9.6-eclipse-temurin-17-alpine AS build
 WORKDIR /app
 
-# Copy root pom and dependencies
+# Copy root pom, maven config and dependencies
+COPY backend/.mvn ./.mvn
 COPY backend/pom.xml ./pom.xml
 RUN mvn dependency:go-offline -B
 
