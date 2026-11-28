@@ -1,3 +1,8 @@
-# Original Database Schema v1 (Lưu Đối Chiếu)
+# Lược đồ CSDL v1 (lưu đối chiếu)
 
-Thư mục này lưu trữ bản thiết kế CSDL v1 ban đầu phục vụ đối chiếu, truy vết lịch sử nâng cấp lên **PostgreSQL v2** (khớp chuẩn Business Rules v1.2, 144 constraints, bổ sung `btree_gist` và trigger bảo vệ `trg_invoice_immutable`).
+Bản thiết kế v1 ngày 18/11/2026 (16 bảng, PK `BIGINT IDENTITY`), giữ nguyên trạng để đối chiếu với v2. **Không dùng để chạy**: Flyway và CI chỉ đọc `db/migration/`.
+
+- `V1__init_schema.sql`, `V2__seed_data.sql`, `test_constraints.sql`: DDL, seed và 75 case kiểm ràng buộc của v1.
+- `HMS_DB_Schema_v1.md`: tài liệu lược đồ v1.
+
+Khác biệt v1 → v2 và lý do: xem `db/DB_REPORT.md`, mục 2.

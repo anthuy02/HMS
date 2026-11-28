@@ -12,7 +12,7 @@ Dự án được thiết kế chuẩn mực theo mô hình tách biệt Front-E
 HMS/
 ├── .github/
 │   └── workflows/
-│       ├── db-constraints-ci.yml                    # Chạy V1 + V2 + db/test/test_constraints.sql (25 test cases/8 groups) trên PostgreSQL 17
+│       ├── db-constraints-ci.yml                    # Chạy V1 + V2 + db/test/test_constraints.sql (219 case, ON_ERROR_STOP) trên PostgreSQL 17
 │       ├── backend-ci.yml                           # Maven verify (backend/), PITest mutation (≥90% branch), Testcontainers, br_coverage.py
 │       ├── frontend-ci.yml                          # TypeScript typecheck, ESLint, Vitest và build Vite (frontend/)
 │       └── e2e-ci.yml                               # Dựng Docker Compose full-stack và chạy Playwright E2E
@@ -30,13 +30,13 @@ HMS/
 │   └── api-contract/
 │       └── openapi.yaml                             # Hợp đồng REST JSON, header Idempotency-Key & mã lỗi 400/401/403/409/422/502
 │
-├── db/                                              # TẦNG CSDL POSTGRESQL V2 (NGUYÊN BẢN, KHÔNG CHỈNH SỬA SQL)
+├── db/                                              # TẦNG CSDL POSTGRESQL V2 (15 bảng theo SRS 4.3, PK UUID)
 │   ├── HMS_DB_Schema.md                             # Tài liệu ERD v2 & bảng truy vết BR -> Constraint
-│   ├── DB_REPORT.md                                 # Báo cáo đối chiếu SRS 4.3 & kết quả chạy 25/25 test case trên Neon
+│   ├── DB_REPORT.md                                 # Đối chiếu SRS 4.3 ↔ cột vật lý, kết quả 219/219 case trên Neon (PostgreSQL 17)
 │   ├── migration/
-│   │   ├── V1__init_schema.sql                      # 15 bảng snake_case, PK UUID, 144 ràng buộc/trigger (btree_gist, EXCLUDE)
+│   │   ├── V1__init_schema.sql                      # 15 bảng snake_case, PK UUID, 133 ràng buộc có tên (btree_gist, EXCLUDE)
 │   └── test/
-│       └── test_constraints.sql                     # 25 test case kiểm tra đích danh tên ràng buộc / SQLSTATE (8 nhóm)
+│       └── test_constraints.sql                     # 219 case, mỗi case bị chặn phải đúng tên ràng buộc / SQLSTATE
 │   └── original_v1/                                 # Bản schema v1 gốc lưu đối chiếu
 │
 ├── tools/                                           # CÔNG CỤ ĐO LƯỜNG V&V

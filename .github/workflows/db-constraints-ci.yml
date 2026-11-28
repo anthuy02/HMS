@@ -40,12 +40,12 @@ jobs:
 
       - name: Run Schema Migration (V1__init_schema.sql)
         run: |
-          PGPASSWORD=test_password_2026 psql -h localhost -U hms_tester -d hms_test_db -f db/migration/V1__init_schema.sql
+          PGPASSWORD=test_password_2026 psql -X -v ON_ERROR_STOP=1 -h localhost -U hms_tester -d hms_test_db -f db/migration/V1__init_schema.sql
 
       - name: Run Seed Data (V2__seed_data.sql)
         run: |
-          PGPASSWORD=test_password_2026 psql -h localhost -U hms_tester -d hms_test_db -f db/migration/V2__seed_data.sql
+          PGPASSWORD=test_password_2026 psql -X -v ON_ERROR_STOP=1 -h localhost -U hms_tester -d hms_test_db -f db/migration/V2__seed_data.sql
 
-      - name: Execute 25 Database Constraints Test Cases
+      - name: Execute 219 Database Constraint Test Cases (fails on any wrong case)
         run: |
-          PGPASSWORD=test_password_2026 psql -h localhost -U hms_tester -d hms_test_db -f db/test/test_constraints.sql
+          PGPASSWORD=test_password_2026 psql -X -v ON_ERROR_STOP=1 -h localhost -U hms_tester -d hms_test_db -f db/test/test_constraints.sql
